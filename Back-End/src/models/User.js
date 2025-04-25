@@ -54,6 +54,14 @@ const UserSchema = new Schema({
   occupation:{
     type: String,
     required: true,
+  },
+  bio:{
+    type: String,
+    maxlength: [150, 'Bio cannot exceed 150 characters'],
+  },
+  avatar:{
+    type: String,
+    default: '',
   }
 });
 UserSchema.pre("save", async function (next) {

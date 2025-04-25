@@ -13,7 +13,7 @@ const BlogPostSchema = new Schema({
     },
     image: {
         type: String,
-        default: '', // Could also be a default image URL
+        default: '',
     },
     tags: [{
         type: String,
