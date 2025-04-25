@@ -51,6 +51,10 @@ const UserSchema = new Schema({
   },
   otpSecret: { type: String },
   is2FAEnabled: { type: Boolean, default: false },
+  occupation:{
+    type: String,
+    required: true,
+  }
 });
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
