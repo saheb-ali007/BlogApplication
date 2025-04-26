@@ -2,24 +2,25 @@ import speakeasy from "speakeasy";
 import User from "../../models/User.js";
 import generateOtp from "../../utils/generateOtp.js";
 import generateToken from "../../utils/generateToken.js";
-import { encrypt } from "../../utils/hash.js";
+import {encrypt, passwordHash} from "../../utils/hash.js";
 import { loginSchema, registerSchema } from "./authValidator.js";
+
 
 const register = async (req, res) => {
   const { error } = registerSchema.validate(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    country,
-    role,
-    bio,
-    avatar,
-    occupation,
-  } = req.body;
   try {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      country,
+      role,
+      bio,
+      avatar,
+      occupation,
+    } = req.body;
     const userCheck = await User.findOne({ email });
     if (userCheck) return res.json({ message: "User already exists" });
     const otp = generateOtp(6);
@@ -103,8 +104,7 @@ const verifyOtp = async (req, res) => {
     if (!user) return res.status(401).json({ message: "User not found" });
     if (user.otp !== otp || user.otpExpiry < new Date())
       return res.status(401).json({ message: "Invalid or Expired OTP" });
-    await User.findOneAndUpdate(
-      { email },
+    await user.updateOne(
       { otp: null, otpExpiry: null, otpVerified: true }
     );
     res.status(200).json({ message: "Email verified successfully" });
@@ -157,7 +157,7 @@ const resendOtp = async (req, res) => {
       return res.status(401).json({ message: "User already verified" });
     const otp = generateOtp(6);
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-    await User.findOneAndUpdate({ email }, { otp, otpExpiry });
+    await user.updateOne({ otp, otpExpiry });
     // await verifyOtpSend(email, otp);
     res.status(200).json({ message: "OTP sent. Please verify your email." });
   } catch (error) {
@@ -177,8 +177,7 @@ const resetPasswordLink = async (req, res) => {
       const encryptedToken = encrypt(email);
       console.log(encryptedToken);
       const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-      await User.findOneAndUpdate(
-        { email },
+      await user.updateOne(
         {
           encryptedToken: encryptedToken.encryptedData,
           encryptedTokenIv: encryptedToken.iv,
@@ -191,9 +190,6 @@ const resetPasswordLink = async (req, res) => {
         .json({
           message:
             "Password Reset link sent to your email. Please check your email to reset your password.",
-          encryptedToken: encryptedToken.encryptedData,
-          encryptedTokenIv: encryptedToken.iv,
-          otpExpiry,
         });
     } else {
       return res.status(401).json({ message: "User not verified" });
@@ -215,7 +211,8 @@ const changePassword = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid)
       return res.status(401).json({ message: "Invalid password" });
-    await User.findOneAndUpdate({ email }, { password });
+    const hashedPassword = await passwordHash(password)
+    await user.updateOne({ password:hashedPassword });
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
     console.error(error);
@@ -224,6 +221,24 @@ const changePassword = async (req, res) => {
       .json({ message: "Internal server error", error: error?.message });
   }
 };
+const forgotPassword = async(req,res)=>{
+  const {token} = req.query
+  console.log(token);
+  const {password} = req.body
+  try{
+    const user = await User.findOne({encryptedToken:token})
+    if(!user) return res.status(404).json({message:"User not found"})
+    const hashedPassword = await passwordHash(password)
+    await user.updateOne({password:hashedPassword,encryptedToken:null,encryptedTokenIv:null,otpExpiry:null})
+
+res.status(200).json({message:"Password changed successfully"})
+  }catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+}
 export {
   login,
   register,
@@ -231,4 +246,6 @@ export {
   resetPasswordLink,
   twoFactorAuth,
   verifyOtp,
+    forgotPassword,
+    changePassword
 };

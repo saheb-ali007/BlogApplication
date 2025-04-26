@@ -1,3 +1,4 @@
+import { genSalt, hash } from "bcryptjs";
 import { configDotenv } from "dotenv";
 import crypto from "node:crypto";
 configDotenv();
@@ -10,6 +11,7 @@ const encrypt = (text) => {
   console.log(encrypted, iv.toString("hex"));
   return { iv: iv.toString("hex"), encryptedData: encrypted };
 };
+/*
 function decrypt(encryptedData, iv) {
   const decipher = crypto.createDecipheriv(
     "aes-256-cbc",
@@ -20,4 +22,10 @@ function decrypt(encryptedData, iv) {
   decrypted += decipher.final("utf8");
   return decrypted;
 }
-export { decrypt, encrypt };
+*/
+
+const passwordHash = async (pass) => {
+  const salt = await genSalt(10);
+  return await hash(pass, salt);
+};
+export { decrypt, encrypt, passwordHash };
