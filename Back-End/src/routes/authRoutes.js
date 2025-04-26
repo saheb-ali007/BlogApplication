@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import {login, register} from "../controllers/auth/authController.js";
+import { login, register, resetPasswordLink} from "../controllers/auth/authController.js";
 const router = Router()
 
 router
@@ -8,7 +8,7 @@ router
 // .post('/verify')
 // .post('/two-factor-auth')
 // .post('/resend-otp')
-// .patch('/forgot-password')
+.post('/reset-password-link',resetPasswordLink)
 // .patch('/change-password')
 
 export default  router

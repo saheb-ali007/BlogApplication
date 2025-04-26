@@ -2,7 +2,7 @@ import speakeasy from "speakeasy";
 import User from "../../models/User.js";
 import generateOtp from "../../utils/generateOtp.js";
 import generateToken from "../../utils/generateToken.js";
-import twoFactorAuthOtp from "../../utils/twoFactorAuth.js";
+import { encrypt } from "../../utils/hash.js";
 import { loginSchema, registerSchema } from "./authValidator.js";
 
 const register = async (req, res) => {
@@ -59,9 +59,9 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid password" });
     if (user.is2FAEnabled) {
-      const otp = speakeasy.totp({
+      speakeasy.totp({
         secret: user.otpSecret,
         encoding: "base32",
       });
@@ -92,4 +92,143 @@ const login = async (req, res) => {
       .json({ message: "Internal server error", error: error?.message });
   }
 };
-export { login, register };
+const verifyOtp = async (req, res) => {
+  const { otp, email } = req.body;
+  if (!otp || !email)
+    return res.status(400).json({ message: "Invalid otp or email" });
+  try {
+    const user = await User.findOne({ email });
+    if (user.otpVerified)
+      return res.status(401).json({ message: "User already verified" });
+    if (!user) return res.status(401).json({ message: "User not found" });
+    if (user.otp !== otp || user.otpExpiry < new Date())
+      return res.status(401).json({ message: "Invalid or Expired OTP" });
+    await User.findOneAndUpdate(
+      { email },
+      { otp: null, otpExpiry: null, otpVerified: true }
+    );
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+};
+const twoFactorAuth = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp)
+    return res.status(400).json({ message: "Email and OTP are required" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const validOtp = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: "base32",
+      token: otp,
+      window: 1,
+    });
+    if (!validOtp) return res.status(401).json({ message: "Invalid OTP" });
+    const token = generateToken(user);
+    res.cookie("token", token, {
+      httpOnly: true,
+      // secure: process.env.NODE_ENV === 'production',
+      sameSite: "strict",
+    });
+    res.status(200).json({
+      message: "Login successful & OTP verified",
+      token,
+      role: user.role,
+      userId: user._id,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+};
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.otpVerified)
+      return res.status(401).json({ message: "User already verified" });
+    const otp = generateOtp(6);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await User.findOneAndUpdate({ email }, { otp, otpExpiry });
+    // await verifyOtpSend(email, otp);
+    res.status(200).json({ message: "OTP sent. Please verify your email." });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+};
+const resetPasswordLink = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.otpVerified) {
+      const encryptedToken = encrypt(email);
+      console.log(encryptedToken);
+      const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+      await User.findOneAndUpdate(
+        { email },
+        {
+          encryptedToken: encryptedToken.encryptedData,
+          encryptedTokenIv: encryptedToken.iv,
+          otpExpiry,
+        }
+      );
+      // Here Have to write Forgot Pass word mail function
+      res
+        .status(200)
+        .json({
+          message:
+            "Password Reset link sent to your email. Please check your email to reset your password.",
+          encryptedToken: encryptedToken.encryptedData,
+          encryptedTokenIv: encryptedToken.iv,
+          otpExpiry,
+        });
+    } else {
+      return res.status(401).json({ message: "User not verified" });
+    }
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+};
+const changePassword = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ message: "Email and password are required" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid)
+      return res.status(401).json({ message: "Invalid password" });
+    await User.findOneAndUpdate({ email }, { password });
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error?.message });
+  }
+};
+export {
+  login,
+  register,
+  resendOtp,
+  resetPasswordLink,
+  twoFactorAuth,
+  verifyOtp,
+};

@@ -67,6 +67,14 @@ const UserSchema = new Schema(
       type: String,
       default: "",
     },
+      encryptedToken: {
+        type: String,
+        default: null,
+      },
+      encryptedTokenIv:{
+        type: String,
+        default: null,
+      }
   },
   { timestamps: true }
 );
