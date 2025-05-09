@@ -34,6 +34,7 @@ const Footer = () => {
           {/* Column 2: Contact Info (Example) */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-3">Contact Us</h3>
+            <p><i>Team-B</i></p>
             <p>ABC Road</p>
             <p>Dhaka-1200, Bangladesh</p>
             <p>Email: <a href="mailto:teamb@info.com" className="hover:text-white transition duration-300">teamb@info.com</a></p>

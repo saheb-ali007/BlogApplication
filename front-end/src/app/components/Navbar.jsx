@@ -1,141 +1,117 @@
-"use client"
-import React, { useState } from 'react';
-// Optional: If using React Router for navigation
-// import { Link } from 'react-router-dom';
+      
+"use client"; 
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import Link from 'next/link'
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
+
+
+
+function Login() { 
+  const { register, handleSubmit, formState: { errors } } = useForm();
+
+  const onSubmit = (data) => {
+    console.log(data);
+    // Handle form submission logic here (e.g., API call)
   };
 
-  // Navigation Links Data (adjust as needed)
-  const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Categories', href: '/categories' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
-    // Add more links if necessary
-  ];
-
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    // Mobile: Full width, padding, centered content
+    // Medium screens and up: Wider container, two columns
+    <div className='flex flex-col md:flex-row items-center justify-center min-h-screen bg-gray-100 p-4'>
+      <div className='bg-white w-full max-w-4xl md:flex shadow-xl rounded-lg overflow-hidden'>
 
-          {/* Logo / Brand Name */}
-          <div className="flex-shrink-0">
-            <a href="/" className="text-2xl font-bold text-gray-800 hover:text-blue-600">
-              MyBlog
-            </a>
-            {/* If using an image logo:
-            <a href="/">
-              <img className="h-8 w-auto" src="/path/to/your/logo.png" alt="MyBlog Logo" />
-            </a>
-            */}
+        {/* Form Section */}
+        {/* Mobile: Full width, takes all space */}
+        {/* Medium screens and up: Takes 3/5 width */}
+        <div className='w-full md:w-3/5 p-6 md:p-10'>
+          <h1 className='font-semibold text-3xl mb-4 bg-gradient-to-r text-transparent from-blue-500 to-purple-500 bg-clip-text'>
+            Team-B
+          </h1>
+
+          <div className='text-center mb-6'>
+            <h2 className='text-2xl font-semibold text-green-500'>
+              Welcome Back!
+            </h2>
+            <p className='text-sm text-gray-600 mt-2'>Enter your credentials to access your account</p>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
-              {navLinks.map((link) => (
-                // Replace <a> with <Link> if using React Router
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                  // Add active link styling if needed (example below for simple href matching)
-                  // aria-current={window.location.pathname === link.href ? 'page' : undefined}
-                >
-                  {link.name}
-                </a>
-                /* --- React Router Example ---
-                 <Link
-                   key={link.name}
-                   to={link.href}
-                   className={({ isActive }) =>
-                     `px-3 py-2 rounded-md text-sm font-medium ${
-                       isActive
-                         ? 'bg-blue-100 text-blue-700'
-                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                     }`
-                   }
-                 >
-                   {link.name}
-                 </Link>
-                */
-              ))}
-              {/* Optional: Add Search, Login Button etc. here for desktop */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Email Input */}
+            <div>
+              <label htmlFor="email" className='block text-sm font-medium text-gray-700 mb-1'>Email Address</label>
+              <input
+                type="email"
+                id="email" // Good practice to link label and input with id
+                placeholder='Enter Your Email'
+                className={`w-full px-4 py-2 border rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                {...register(
+                  'email',
+                  {
+                    required: 'Email is required',
+                    pattern: { // Basic email pattern validation
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address"
+                    }
+                  }
+                )}
+              />
+              {errors.email && <p className='text-red-500 text-xs mt-1'>{errors.email.message}</p>}
             </div>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="-mr-2 flex md:hidden">
-            <button
-              onClick={toggleMenu}
-              type="button"
-              className="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-blue-500"
-              aria-controls="mobile-menu"
-              aria-expanded={isOpen}
-            >
-              <span className="sr-only">Open main menu</span>
-              {/* Icon when menu is closed (Hamburger) */}
-              {!isOpen ? (
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              ) : (
-                // Icon when menu is open (Close)
-                <svg className="block h-4 w-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Mobile Menu, show/hide based on menu state */}
-      {isOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 p-2 transition transform origin-top-right z-40 bg-white shadow-lg ring-1 ring-black ring-opacity-5" id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-             {navLinks.map((link) => (
-                // Replace <a> with <Link> if using React Router
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-                  // aria-current={window.location.pathname === link.href ? 'page' : undefined}
-                  onClick={() => setIsOpen(false)} // Close menu on link click
-                >
-                  {link.name}
-                </a>
-                 /* --- React Router Example ---
-                 <Link
-                   key={link.name}
-                   to={link.href}
-                   className={({ isActive }) =>
-                     `block px-3 py-2 rounded-md text-base font-medium ${
-                       isActive
-                         ? 'bg-blue-100 text-blue-700'
-                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                     }`
+            {/* Password Input */}
+            <div>
+               <label htmlFor="password" className='block text-sm font-medium text-gray-700 mb-1'>Password</label>
+               <input
+                 type="password"
+                 id="password"
+                 placeholder='Password'
+                 className={`w-full px-4 py-2 border rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                 {...register(
+                   "password",
+                   {
+                     required: 'Password is required'
+                     // Add minLength etc. if needed
                    }
-                    onClick={() => setIsOpen(false)} // Close menu on link click
-                 >
-                   {link.name}
-                 </Link>
-                */
-              ))}
-            {/* Optional: Add Search, Login Button etc. here for mobile */}
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-};
+                 )}
+               />
+                {errors.password && <p className='text-red-500 text-xs mt-1'>{errors.password.message}</p>}
+            </div>
 
-export default Navbar;
+             {/* Forgot Password Link */}
+             <div className='text-right text-sm'>
+                <Link href='#' className='text-blue-500 hover:underline'>Forgot password?</Link>
+             </div>
+
+             {/* Submit Button */}
+             {/* Note: The button inside the Link was incorrect. The form's onSubmit handles submission. */}
+             {/* If you want the button to *look* like a link, style it accordingly. */}
+             {/* If you want navigation *after* successful login, handle it in onSubmit */}
+            <button
+                type='submit'
+                className='w-full rounded-full px-4 py-2 mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold transition duration-200'
+              >
+                Login
+            </button>
+
+          </form>
+        </div>
+
+       
+        <div className=' md:flex flex-col items-center justify-center bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white w-full md:w-2/5 p-5 text-center'>
+            <h2 className='text-xl lg:text-2xl font-semibold mb-4 italic'>"Failure is not the opposite of Success, It's part of Success"</h2>
+            <p className='text-sm mb-6'>Fill up personal information and start your journey with us.</p>
+            <Link href="/registration">
+              <span className="block w-full md:w-auto bg-white text-purple-600 rounded-full px-6 py-2 font-semibold hover:bg-gray-100 transition duration-200 cursor-pointer">
+                  Sign Up
+              </span>
+            </Link>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+export default Login; // Use uppercase for component name
